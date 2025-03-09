@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Rust WASM Token Counter</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --success-color: #2ecc71;
+            --success-dark: #27ae60;
+            --text-color: #2c3e50;
+            --text-light: #7f8c8d;
+            --border-color: #e0e0e0;
+            --bg-light: #f8f9fa;
+            --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --radius: 8px;
+            --spacing: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-light);
+            padding: var(--spacing);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: grid;
+            gap: calc(var(--spacing) / 2);
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            padding: var(--spacing);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        h1 {
+            color: var(--text-color);
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        h2 {
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .regex-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .regex-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font: 14px monospace;
+            transition: border-color 0.2s;
+        }
+
+        .regex-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .help-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--text-light);
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .help-link:hover {
+            background: var(--text-color);
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: var(--spacing);
+            margin-bottom: var(--spacing);
+            padding: 10px;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .radio-label:hover {
+            background: white;
+        }
+
+        .radio-label input[type="radio"] {
+            margin: 0;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font: inherit;
+            resize: vertical;
+            margin-bottom: var(--spacing);
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: var(--spacing);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .file-label {
+            background: var(--success-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+
+        .file-label:hover {
+            background: var(--success-dark);
+        }
+
+        #file-preview {
+            font: 14px monospace;
+            padding: 12px;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing);
+            text-align: center;
+            margin-top: var(--spacing);
+        }
+
+        .stat {
+            padding: var(--spacing);
+            background: var(--bg-light);
+            border-radius: var(--radius);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .processing {
+            display: none;
+            margin-top: var(--spacing);
+        }
+
+        .progress {
+            height: 4px;
+            background: var(--bg-light);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary-color);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .input-mode {
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .input-mode.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .mode-selector {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Rust WASM Token Counter</h1>
+        <h5>A blazingly fast, non-blocking high performance token counter build with 🦀</h5>
+        <div class="card">
+            <div class="regex-section">
+                <input type="text" id="regex-input" class="regex-input" placeholder="Enter custom regex pattern"
+                    value="\b[\p{L}\p{N}]+\b|[^\s\p{L}\p{N}]">
+                <button id="update-regex">Update</button>
+                <a href="https://docs.rs/regex/latest/regex/#syntax" target="_blank" class="help-link"
+                    title="Regex Syntax Help">?</a>
+            </div>
+        </div>
+
+        <div class="card input-section">
+            <h2>Text</h2>
+            <div class="mode-selector">
+                <label class="radio-label">
+                    <input type="radio" name="input-mode" value="manual" checked>
+                    Manual Input
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="input-mode" value="file">
+                    File Upload
+                </label>
+            </div>
+
+            <div id="manual-input-section" class="input-mode active">
+                <textarea id="text-input" placeholder="Enter text to count tokens..."></textarea>
+                <div class="button-row">
+                    <button id="paste-button">Paste</button>
+                    <button id="clear-button">Clear</button>
+                </div>
+            </div>
+
+            <div id="file-input-section" class="input-mode">
+                <div class="button-row">
+                    <label for="file-input" class="file-label">Choose File</label>
+                    <input type="file" id="file-input" accept=".txt,.md,.json,.csv">
+                </div>
+                <h2>Partial preview</h2>
+                <div id="file-preview">
+                    -
+                </div>
+            </div>
+            <div class="processing">
+                <div class="progress">
+                    <div class="progress-bar"></div>
+                </div>
+                <div class="progress-text">Processing...</div>
+            </div>
+        </div>
+
+        <div class="card result-card">
+            <h2>Results</h2>
+            <div class="stats">
+                <div class="stat">
+                    <div id="total-tokens" class="stat-value">0</div>
+                    <div class="stat-label">Total Tokens</div>
+                </div>
+                <div class="stat">
+                    <div id="unique-tokens" class="stat-value">0</div>
+                    <div class="stat-label">Unique Tokens</div>
+                </div>
+            </div>
+        </div>
+        <a href="https://github.com/alexandrughinea" target="_blank">
+            by alexandrughinea
+        </a>
+    </div>
+
+    <script type="module">
+        (async () => {
+            const worker = new Worker('worker.js', { type: 'module' });
+            const elements = {
+                textInput: document.getElementById('text-input'),
+                fileInput: document.getElementById('file-input'),
+                pasteButton: document.getElementById('paste-button'),
+                clearButton: document.getElementById('clear-button'),
+                totalTokens: document.getElementById('total-tokens'),
+                uniqueTokens: document.getElementById('unique-tokens'),
+                manualInputSection: document.getElementById('manual-input-section'),
+                fileInputSection: document.getElementById('file-input-section'),
+                filePreview: document.getElementById('file-preview'),
+                regexInput: document.getElementById('regex-input'),
+                updateRegexButton: document.getElementById('update-regex'),
+                processing: document.querySelector('.processing'),
+                progressBar: document.querySelector('.progress-bar')
+            };
+
+            let processingTimeout;
+
+            const showProcessing = (show = true) => {
+                elements.processing.style.display = show ? 'block' : 'none';
+
+                if (!show) {
+                    elements.progressBar.style.width = '0%';
+                }
+            };
+
+            const updateProgress = (msg) => {
+                const numberFormatter = new Intl.NumberFormat("en-US")
+
+
+                elements.totalTokens.textContent = numberFormatter.format(msg.total);
+                elements.uniqueTokens.textContent = numberFormatter.format(msg.unique);
+                elements.progressBar.style.width = `${msg.progress}%`;
+            };
+
+            const processText = (text) => {
+                showProcessing();
+                worker.postMessage({ type: 'process_text', text });
+            };
+
+            const clearResults = () => {
+                elements.totalTokens.textContent = '0';
+                elements.uniqueTokens.textContent = '0';
+                elements.filePreview.textContent = '';
+                showProcessing(false);
+            };
+
+            worker.onmessage = ({ data: msg }) => {
+                switch (msg.type) {
+                    case 'init_complete':
+                        worker.postMessage({
+                            type: 'set_regex',
+                            pattern: elements.regexInput.value
+                        });
+                        break;
+                    case 'result':
+                        showProcessing(false);
+                        elements.totalTokens.textContent = msg.total;
+                        elements.uniqueTokens.textContent = msg.unique;
+                        break;
+                    case 'preview':
+                        elements.filePreview.textContent = msg.content;
+                        break;
+                    case 'progress':
+                        updateProgress(msg);
+                        break;
+                    case 'error':
+                        showProcessing(false);
+                        console.error('Error:', msg.message);
+                        alert('Error: ' + msg.message);
+                        break;
+                }
+            };
+
+            elements.textInput.addEventListener('input', () => {
+                clearTimeout(processingTimeout);
+                processingTimeout = setTimeout(() => {
+                    const text = elements.textInput.value.trim();
+                    text ? processText(text) : clearResults();
+                }, 300);
+            });
+
+            elements.pasteButton.addEventListener('click', async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    elements.textInput.value = text;
+                    processText(text);
+                } catch (err) {
+                    console.error('Failed to read clipboard:', err);
+                    alert('Failed to access clipboard');
+                }
+            });
+
+            elements.clearButton.addEventListener('click', () => {
+                elements.textInput.value = '';
+                clearResults();
+            });
+
+            elements.fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+
+                if (!file) {
+                    return
+                };
+
+                showProcessing();
+
+                worker.postMessage({
+                    type: 'process_text',
+                    input: file
+                });
+            });
+
+            document.querySelectorAll('input[name="input-mode"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const isManual = e.target.value === 'manual';
+                    elements.manualInputSection.classList.toggle('active', isManual);
+                    elements.fileInputSection.classList.toggle('active', !isManual);
+                    clearResults();
+
+                    if (isManual) {
+                        elements.fileInput.value = '';
+                    } else {
+                        elements.textInput.value = '';
+                    }
+                });
+            });
+
+            elements.updateRegexButton.addEventListener('click', () => {
+                const pattern = elements.regexInput.value.trim();
+                if (!pattern) return;
+
+                worker.postMessage({
+                    type: 'set_regex',
+                    pattern
+                });
+
+                const text = elements.textInput.value.trim();
+                if (text) {
+                    processText(text);
+                } else if (elements.fileInput.files[0]) {
+                    worker.postMessage({
+                        type: 'process_text',
+                        input: elements.fileInput.files[0]
+                    });
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>

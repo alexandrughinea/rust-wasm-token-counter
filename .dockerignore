@@ -1,0 +1,24 @@
+# Rust build artifacts
+target/
+pkg/
+dist/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+
+# System files
+.DS_Store
+
+# Temporary files
+*.swp
+*.swo
+*~
+
+# Docker
+Dockerfile
+.dockerignore

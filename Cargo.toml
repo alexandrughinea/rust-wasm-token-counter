@@ -1,0 +1,29 @@
+[package]
+name = "rust-wasm-token-counter"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[package.metadata.wasm-pack]
+wasm-opt = false
+
+[dependencies]
+wasm-bindgen = "0.2.84"
+js-sys = "0.3.61"
+regex = "1.9.5"
+console_error_panic_hook = "0.1.7"
+lazy_static = "1.4.0"
+wasm-bindgen-futures = "0.4.33"
+
+[dependencies.web-sys]
+version = "0.3.4"
+features = [
+    'File',
+]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
