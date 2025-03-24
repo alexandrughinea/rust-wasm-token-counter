@@ -108,7 +108,7 @@ location = /worker.js {
 
 1. **Process Text**:
    - Type or paste directly into the text area
-   - Upload a text file (supports files over 100MB)
+   - Upload a text file (supports files over 1000MB)
    - Use clipboard paste functionality
 
 2. **Monitor Progress**:
